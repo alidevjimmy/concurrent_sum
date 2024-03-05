@@ -1,4 +1,4 @@
-package array_sum
+package v1
 
 import (
 	"log"

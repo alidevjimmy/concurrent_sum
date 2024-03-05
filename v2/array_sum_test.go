@@ -1,6 +1,10 @@
-package array_sum
+package v2
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+	"time"
+)
 
 func TestNaiveConcurrentSum(t *testing.T) {
 	tests := []struct {
@@ -78,4 +82,16 @@ func BenchmarkConcurrentSum(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		concurrentSum(largeArray)
 	}
+}
+
+func TestCompareConcurrentSumPerformance(t *testing.T) {
+	a := make([]int, 100*1024*1024)
+
+	start := time.Now()
+	naiveConcurrentSum(a)
+	fmt.Println("naive approach time:", time.Since(start))
+
+	start = time.Now()
+	concurrentSum(a)
+	fmt.Println("concurrent approach time:", time.Since(start))
 }
