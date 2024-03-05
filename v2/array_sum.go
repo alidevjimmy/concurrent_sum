@@ -19,7 +19,7 @@ func concurrentSum(arr []int) int {
 	// sum of each array in corresponding goroutine
 	var wg sync.WaitGroup
 
-	res := make(chan int, coreCount+1)
+	var sums []<-chan int
 
 	for i := 0; i < len(arr); i += chunkSize {
 		wg.Add(1)
@@ -28,31 +28,55 @@ func concurrentSum(arr []int) int {
 		if end > len(arr) {
 			end = len(arr)
 		}
-		go calculate(arr[i:end], &wg, res)
+		sums = append(sums, calculate(arr[i:end], &wg))
 	}
 
 	wg.Wait()
-	close(res)
 
-	sum := 0
-	for r := range res {
-		sum += r
+	res := 0
+	for sum := range fanIn(sums) {
+		res += sum
 	}
 
-	return sum
+	return res
 }
 
-func calculate(arr []int, wg *sync.WaitGroup, res chan<- int) {
-	sum := sumOfArray(arr)
+// fanIn pattern
+func fanIn(sums []<-chan int) <-chan int {
+	res := make(chan int, len(sums))
 
-	defer wg.Done()
+	go func() {
+		defer close(res)
 
-	select {
-	case res <- sum:
-	default:
-		log.Printf("error: cannot send sum to res channel")
-	}
+		for i := 0; i < len(sums); i++ {
+			select {
+			case res <- <-sums[i]:
+			default:
+				log.Println("error: cannot receive from sum channel and send to res channel")
+			}
+		}
+	}()
 
+	return res
+}
+
+// generator pattern
+func calculate(arr []int, wg *sync.WaitGroup) <-chan int {
+	res := make(chan int, 1)
+
+	go func() {
+		sum := sumOfArray(arr)
+
+		defer wg.Done()
+
+		select {
+		case res <- sum:
+		default:
+			log.Printf("error: cannot send sum to res channel")
+		}
+	}()
+
+	return res
 }
 
 func sumOfArray(arr []int) int {

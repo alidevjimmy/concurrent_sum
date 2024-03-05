@@ -1,4 +1,4 @@
-package v1
+package v2
 
 import (
 	"fmt"
@@ -85,7 +85,7 @@ func BenchmarkConcurrentSum(b *testing.B) {
 }
 
 func TestCompareConcurrentSumPerformance(t *testing.T) {
-	a := make([]int, 1000*1024*1024)
+	a := make([]int, 100*1024*1024)
 
 	start := time.Now()
 	naiveConcurrentSum(a)
